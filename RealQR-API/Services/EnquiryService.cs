@@ -9,15 +9,9 @@ namespace RealQR_API.Services
         private readonly RealQRDBContext _dbContext;
         public EnquiryService(RealQRDBContext dbContext) => _dbContext = dbContext;
 
-        public async Task<List<Enquiry>> GetEnquiriesAsync()
-        {
-            return await _dbContext.Enquiry.ToListAsync();
-        }
+        public async Task<List<Enquiry>> GetEnquiriesAsync() => await _dbContext.Enquiry.ToListAsync();
 
-        public async Task<Enquiry> GetEnquiryAsync(int id)
-        {
-            return await _dbContext.Enquiry.FindAsync(id);
-        }
+        public async Task<Enquiry> GetEnquiryAsync(int id) => await _dbContext.Enquiry.FindAsync(id);
 
         public async Task<Enquiry> AddEnquiryAsync(Enquiry enquiry)
         {

@@ -14,6 +14,10 @@ builder.Services.AddDbContext<RealQRDBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("realQRDB"));
 });
+builder.Services.AddCors(options => options.AddPolicy("AngularApp", policy =>
+{
+    policy.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod();
+}));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -30,6 +34,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEnquiryService, EnquiryService>();
 
 
 var app = builder.Build();
@@ -41,6 +46,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseCors("AngularApp");
 
 app.MapControllers();
 

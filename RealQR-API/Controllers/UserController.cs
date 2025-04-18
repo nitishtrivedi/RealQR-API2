@@ -31,7 +31,25 @@ namespace RealQR_API.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request) => Ok(await _userService.Login(request.Username, request.Password));
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                var token = await _userService.Login(request.Username, request.Password);
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message == "Invalid Password")
+                {
+                    return Unauthorized(ex.Message);
+                } 
+                else
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+        }
 
     }
 
