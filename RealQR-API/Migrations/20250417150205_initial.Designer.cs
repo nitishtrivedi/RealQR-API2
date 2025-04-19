@@ -12,7 +12,7 @@ namespace RealQR_API.Migrations
 {
     [DbContext(typeof(RealQRDBContext))]
     [Migration("20250417150205_initial")]
-    partial class initial
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

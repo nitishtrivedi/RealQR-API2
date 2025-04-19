@@ -1,6 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using RealQR_API.DBContext;
 using RealQR_API.Models;
+using RealQR_API.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -9,45 +10,24 @@ namespace RealQR_API.Services
 {
     public class UserService : IUserService
     {
-        private readonly RealQRDBContext _dbContext;
+        private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
-        public UserService(RealQRDBContext dbContext, IConfiguration configuration)
+        public UserService(IConfiguration configuration, IUserRepository userRepository)
         {
             _configuration = configuration;
-            _dbContext = dbContext;
+            _userRepository = userRepository;
         }
 
         public async Task<string> Register(string username, string firstname, string lastname, string password, string email, bool isUserAdmin)
         {
-            var user = new User
-            {
-                UserName = username,
-                FirstName = firstname,
-                LastName = lastname,
-                Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                IsUserAdmin = isUserAdmin
-            };
-            _dbContext.Users.Add(user);
-            await _dbContext.SaveChangesAsync();
-            return GenerateJwtToken(user);
+            var returnedUser = await _userRepository.RegisterAsync(username, firstname, lastname, password, email, isUserAdmin);
+            return GenerateJwtToken(returnedUser);
         }
 
         public async Task<string> Login(string username, string password)
         {
-            var user =  _dbContext.Users.FirstOrDefault(u => u.UserName == username);
-            if (user != null)
-            {
-                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-                {
-                    throw new Exception("Invalid Password");
-                }
-            }
-            else
-            {
-                throw new Exception("Invalid User or User not found");
-            }
+            var user = await _userRepository.LoginAsync(username, password);
             return GenerateJwtToken(user);
         }
 

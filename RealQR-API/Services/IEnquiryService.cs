@@ -4,7 +4,7 @@ namespace RealQR_API.Services
 {
     public interface IEnquiryService
     {
-        Task<List<Enquiry>> GetEnquiriesAsync();
+        Task<IEnumerable<Enquiry>> GetEnquiriesAsync();
         Task<Enquiry> GetEnquiryAsync(int id);
         Task<Enquiry> AddEnquiryAsync(Enquiry enquiry);
         Task<bool> EditEnquiryAsync(int id, Enquiry enquiry);
