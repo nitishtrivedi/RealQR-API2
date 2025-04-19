@@ -1,11 +1,13 @@
-﻿using RealQR_API.DBContext;
-using RealQR_API.Models;
+﻿using RealQR_API.Models;
 
 namespace RealQR_API.Repositories
 {
     public interface IUserRepository
     {
-        Task<User> RegisterAsync(string username, string firstname, string lastname, string password, string email, bool isUserAdmin);
-        Task<User> LoginAsync(string username, string password);
+        Task<IEnumerable<User>> GetAllAsync();
+        Task<User> GetByIdAsync(int id);
+        Task<User> AddAsync(User user);
+        Task<bool> EditAsync(User user, int id);
+        Task<bool> DeleteAsync(int id);
     }
 }

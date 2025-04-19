@@ -34,10 +34,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEnquiryRepository, EnquiryRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnquiryService, EnquiryService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 
 
 var app = builder.Build();

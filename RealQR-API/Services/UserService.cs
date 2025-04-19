@@ -1,58 +1,21 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using RealQR_API.DBContext;
-using RealQR_API.Models;
+﻿using RealQR_API.Models;
 using RealQR_API.Repositories;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace RealQR_API.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IConfiguration _configuration;
+        public UserService(IUserRepository userRepository) => _userRepository = userRepository;
 
-        public UserService(IConfiguration configuration, IUserRepository userRepository)
-        {
-            _configuration = configuration;
-            _userRepository = userRepository;
-        }
+        public async Task<IEnumerable<User>> GetUsers() => await _userRepository.GetAllAsync();
 
-        public async Task<string> Register(string username, string firstname, string lastname, string password, string email, bool isUserAdmin)
-        {
-            var returnedUser = await _userRepository.RegisterAsync(username, firstname, lastname, password, email, isUserAdmin);
-            return GenerateJwtToken(returnedUser);
-        }
+        public async Task<User> GetUserById(int id) => await _userRepository.GetByIdAsync(id);
 
-        public async Task<string> Login(string username, string password)
-        {
-            var user = await _userRepository.LoginAsync(username, password);
-            return GenerateJwtToken(user);
-        }
+        public async Task<User> AddUser(User user) => await _userRepository.AddAsync(user);
 
+        public async Task<bool> EditUser(User user, int id) => await _userRepository.EditAsync(user, id);
 
-        
-
-        private string GenerateJwtToken(User user)
-        {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.UserName.ToString()),
-                new Claim(ClaimTypes.Role, user.IsUserAdmin ? "Admin" : "User")
-            };
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(
-                    issuer: _configuration["Jwt:Issuer"],
-                    audience: _configuration["Jwt:Audience"],
-                    claims: claims,
-                    expires: DateTime.UtcNow.AddDays(1),
-                    signingCredentials: creds
-                );
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        
+        public async Task<bool> DeleteUser(int id) => await _userRepository.DeleteAsync(id);
     }
 }

@@ -1,44 +1,49 @@
-﻿using RealQR_API.DBContext;
+﻿using Microsoft.EntityFrameworkCore;
+using RealQR_API.DBContext;
 using RealQR_API.Models;
 
 namespace RealQR_API.Repositories
 {
-    public class UserRepository: IUserRepository
+    public class UserRepository : IUserRepository
     {
         private readonly RealQRDBContext _dbContext;
         public UserRepository(RealQRDBContext dbContext) => _dbContext = dbContext;
 
-        public Task<User> LoginAsync(string username, string password)
+        public async Task<IEnumerable<User>> GetAllAsync()
         {
-            var user = _dbContext.Users.FirstOrDefault(u => u.UserName == username);
-            if (user != null)
-            {
-                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-                {
-                    throw new Exception("Invalid Password");
-                }
-            }
-            else
-            {
-                throw new Exception("Invalid User or User not found");
-            }
-            return Task.FromResult(user);
+            return await _dbContext.Users.ToListAsync();
         }
 
-        public async Task<User> RegisterAsync(string username, string firstname, string lastname, string password, string email, bool isUserAdmin)
+        public async Task<User> GetByIdAsync(int id)
         {
-            var user = new User
-            {
-                UserName = username,
-                FirstName = firstname,
-                LastName = lastname,
-                Email = email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                IsUserAdmin = isUserAdmin
-            };
+            var user = await _dbContext.Users.FindAsync(id);
+            return user ?? throw new Exception("User Not Found");
+        }
+
+        public async Task<User> AddAsync(User user)
+        {
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
             return user;
+        }
+
+        public async Task<bool> EditAsync(User user, int id)
+        {
+            if (id != user.Id) return false;
+            var existingUser = await _dbContext.Users.FindAsync(id);
+            if (existingUser == null) return false;
+            _dbContext.Entry(existingUser).CurrentValues.SetValues(user);
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var user = await GetByIdAsync(id);
+            if (user == null) return false;
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+            return true;
         }
     }
 }
