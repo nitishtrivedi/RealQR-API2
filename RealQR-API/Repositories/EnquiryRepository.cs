@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RealQR_API.DBContext;
+using RealQR_API.DTOs;
 using RealQR_API.Models;
 
 namespace RealQR_API.Repositories
@@ -10,15 +11,35 @@ namespace RealQR_API.Repositories
         public EnquiryRepository(RealQRDBContext dbContext) => _dbContext = dbContext;
 
 
-        public async Task<IEnumerable<Enquiry>> GetAllAsync() => await _dbContext.Enquiry.ToListAsync();
-
-        public async Task<Enquiry> GetAsync(int id) => await _dbContext.Enquiry.FindAsync(id);
-
-        public async Task<Enquiry> AddAsync(Enquiry enquiry)
+        public async Task<IEnumerable<EnquiryDto>> GetAllAsync()
         {
+            var enquiries = await _dbContext.Enquiry.Include(e => e.EnquiryQuestionnaire).ToListAsync();
+            return enquiries.Select(e => MapToDto(e)).ToList();
+        }
+
+        public async Task<EnquiryDto> GetAsync(int id)
+        {
+            var enquiry = await _dbContext.Enquiry.Include(e => e.EnquiryQuestionnaire).FirstOrDefaultAsync(e => e.Id == id);
+            if (enquiry == null) throw new KeyNotFoundException($"Enquiry with ID: {id} not found");
+            return MapToDto(enquiry);
+        }
+
+        public async Task<EnquiryDto> AddAsync(Enquiry enquiry)
+        {
+            if (enquiry == null) throw new ArgumentNullException(nameof(enquiry));
+
             _dbContext.Enquiry.Add(enquiry);
             await _dbContext.SaveChangesAsync();
-            return enquiry;
+
+            var questionnaire = new EnquiryQuestionnaire
+            {
+                EnquiryId = enquiry.Id,
+                EnquiryStatus = "Open",
+                AgentName = ""
+            };
+            _dbContext.EnquiryQuestionnaire.Add(questionnaire);
+            await _dbContext.SaveChangesAsync();
+            return MapToDto(enquiry);
         }
 
         public async Task<bool> EditAsync(int id, Enquiry enquiry)
@@ -27,17 +48,73 @@ namespace RealQR_API.Repositories
             var existingEnquiry = await _dbContext.Enquiry.FindAsync(id);
             if (existingEnquiry == null) return false;
             _dbContext.Entry(existingEnquiry).CurrentValues.SetValues(enquiry);
-            await _dbContext.SaveChangesAsync();
-            return true;
+
+            if (existingEnquiry.EnquiryQuestionnaire == null)
+            {
+                existingEnquiry.EnquiryQuestionnaire = new EnquiryQuestionnaire
+                {
+                    EnquiryId = enquiry.Id,
+                    EnquiryStatus = "Open",
+                    AgentName = ""
+                };
+                _dbContext.EnquiryQuestionnaire.Add(existingEnquiry.EnquiryQuestionnaire);
+            }
+            else if(enquiry.EnquiryQuestionnaire != null)
+            {
+                _dbContext.Entry(existingEnquiry.EnquiryQuestionnaire).CurrentValues.SetValues(enquiry.EnquiryQuestionnaire);
+            }
+
+            var result = await _dbContext.SaveChangesAsync() > 0;
+            return result;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
             var enquiry = await _dbContext.Enquiry.FindAsync(id);
             if (enquiry == null) return false;
+
+            if(enquiry.EnquiryQuestionnaire != null)
+            {
+                _dbContext.EnquiryQuestionnaire.Remove(enquiry.EnquiryQuestionnaire);
+            }
             _dbContext.Enquiry.Remove(enquiry);
-            await _dbContext.SaveChangesAsync();
-            return true;
+            var result = await _dbContext.SaveChangesAsync() > 0;
+            return result;
+        }
+
+        private EnquiryDto MapToDto(Enquiry enquiry)
+        {
+            return new EnquiryDto
+            {
+                Id = enquiry.Id,
+                FirstName = enquiry.FirstName,
+                LastName = enquiry.LastName,
+                ContactNumber = enquiry.ContactNumber,
+                Email = enquiry.Email,
+                MethodOfContact = enquiry.MethodOfContact,
+                BudgetRange = enquiry.BudgetRange,
+                PreferredAreas = enquiry.PreferredAreas,
+                PropertyType = enquiry.PropertyType,
+                ModeOfPayment = enquiry.ModeOfPayment,
+                PurchaseTimeFrame = enquiry.PurchaseTimeFrame,
+                PurchaseType = enquiry.PurchaseType,
+                OtherQuestions = enquiry.OtherQuestions,
+                ConsentToCall = enquiry.ConsentToCall,
+                EnquiryQuestionnaire = enquiry.EnquiryQuestionnaire != null ? new EnquiryQuestionnaireDto
+                {
+                    Id = enquiry.EnquiryQuestionnaire.Id,
+                    EnquiryId = enquiry.EnquiryQuestionnaire.EnquiryId,
+                    EnquiryStatus = enquiry.EnquiryQuestionnaire.EnquiryStatus,
+                    AgentName = enquiry.EnquiryQuestionnaire.AgentName,
+                    HasConfirmedBudget = enquiry.EnquiryQuestionnaire.HasConfirmedBudget,
+                    RefinedBudgetRange = enquiry.EnquiryQuestionnaire.RefinedBudgetRange,
+                    ReconfirmModeOfPayment = enquiry.EnquiryQuestionnaire.ReconfirmModeOfPayment,
+                    LoanProcessingConsent = enquiry.EnquiryQuestionnaire.LoanProcessingConsent,
+                    LoanProcessingVendor = enquiry.EnquiryQuestionnaire.LoanProcessingVendor,
+                    FollowUpActions = enquiry.EnquiryQuestionnaire.FollowUpActions,
+                    Comments = enquiry.EnquiryQuestionnaire.Comments
+                } : null
+            };
         }
     }
 }

@@ -5,12 +5,22 @@ using RealQR_API.DBContext;
 using RealQR_API.Repositories;
 using RealQR_API.Services;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+//Added below to remove circular dependency and cleaner JSON output
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = null; 
+        options.JsonSerializerOptions.MaxDepth = 64; 
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 builder.Services.AddDbContext<RealQRDBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("realQRDB"));

@@ -23,5 +23,8 @@ namespace RealQR_API.Models
         public string PurchaseType { get; set; } //Flat, bungalow etc.
         public string OtherQuestions { get; set; }
         public bool ConsentToCall { get; set; }
+
+        public EnquiryQuestionnaire EnquiryQuestionnaire { get; set; }
+
     }
 }

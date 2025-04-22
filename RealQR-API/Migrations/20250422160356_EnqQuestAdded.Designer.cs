@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealQR_API.DBContext;
 
@@ -10,9 +11,11 @@ using RealQR_API.DBContext;
 namespace RealQR_API.Migrations
 {
     [DbContext(typeof(RealQRDBContext))]
-    partial class RealQRDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250422160356_EnqQuestAdded")]
+    partial class EnqQuestAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -152,11 +155,13 @@ namespace RealQR_API.Migrations
 
             modelBuilder.Entity("RealQR_API.Models.EnquiryQuestionnaire", b =>
                 {
-                    b.HasOne("RealQR_API.Models.Enquiry", null)
+                    b.HasOne("RealQR_API.Models.Enquiry", "Enquiry")
                         .WithOne("EnquiryQuestionnaire")
                         .HasForeignKey("RealQR_API.Models.EnquiryQuestionnaire", "EnquiryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Enquiry");
                 });
 
             modelBuilder.Entity("RealQR_API.Models.Enquiry", b =>

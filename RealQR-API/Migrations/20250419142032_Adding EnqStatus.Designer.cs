@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealQR_API.DBContext;
 
@@ -10,9 +11,11 @@ using RealQR_API.DBContext;
 namespace RealQR_API.Migrations
 {
     [DbContext(typeof(RealQRDBContext))]
-    partial class RealQRDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250419142032_Adding EnqStatus")]
+    partial class AddingEnqStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,6 +42,9 @@ namespace RealQR_API.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EnquiryStatus")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FirstName")
@@ -73,52 +79,6 @@ namespace RealQR_API.Migrations
                     b.ToTable("Enquiry");
                 });
 
-            modelBuilder.Entity("RealQR_API.Models.EnquiryQuestionnaire", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AgentName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Comments")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("EnquiryId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("EnquiryStatus")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FollowUpActions")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("HasConfirmedBudget")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LoanProcessingConsent")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("LoanProcessingVendor")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ReconfirmModeOfPayment")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RefinedBudgetRange")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EnquiryId")
-                        .IsUnique();
-
-                    b.ToTable("EnquiryQuestionnaire");
-                });
-
             modelBuilder.Entity("RealQR_API.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -148,20 +108,6 @@ namespace RealQR_API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("RealQR_API.Models.EnquiryQuestionnaire", b =>
-                {
-                    b.HasOne("RealQR_API.Models.Enquiry", null)
-                        .WithOne("EnquiryQuestionnaire")
-                        .HasForeignKey("RealQR_API.Models.EnquiryQuestionnaire", "EnquiryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RealQR_API.Models.Enquiry", b =>
-                {
-                    b.Navigation("EnquiryQuestionnaire");
                 });
 #pragma warning restore 612, 618
         }

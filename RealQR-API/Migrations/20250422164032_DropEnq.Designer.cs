@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RealQR_API.DBContext;
 
@@ -10,9 +11,11 @@ using RealQR_API.DBContext;
 namespace RealQR_API.Migrations
 {
     [DbContext(typeof(RealQRDBContext))]
-    partial class RealQRDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250422164032_DropEnq")]
+    partial class DropEnq
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
