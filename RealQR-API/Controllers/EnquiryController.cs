@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RealQR_API.DBContext;
 using RealQR_API.DTOs;
 using RealQR_API.Models;
@@ -57,6 +58,40 @@ namespace RealQR_API.Controllers
             var success = await _enquiryService?.DeleteEnquiryAsync(id);
             if (!success) return BadRequest(new { Message = $"Enquiry with ID: {id} not found." });
             return Ok(new {Message = "Enquiry deleted successfully"});
+        }
+
+        //Questionnaire Edit Method
+        [HttpPut("{id}/questionnaire")]
+        public async Task<IActionResult> UpdateQuestionnaire(int id, [FromBody] EnquiryQuestionnaireDto questionnaireDto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != questionnaireDto.EnquiryId) return BadRequest(new {Message = "Enquiry ID Mismatch"});
+            try
+            {
+                var enquiryDto = await _enquiryService.GetEnquiryAsync(id);
+                if (enquiryDto == null) return NotFound(new { Message = $"Enquiry with ID: {id} not found" });
+                var enquiry = MapToEntity(enquiryDto);
+                var questionnaire = MapToEntity(enquiry, questionnaireDto);
+
+                var existingQuestionnaire = await _dbContext.EnquiryQuestionnaire.FindAsync(questionnaire.Id);
+                if (existingQuestionnaire == null)
+                {
+                    _dbContext.EnquiryQuestionnaire.Add(questionnaire);
+                }
+                else
+                {
+                    _dbContext.Entry(existingQuestionnaire).State = EntityState.Detached;
+                    _dbContext.Entry(existingQuestionnaire).State = EntityState.Modified;
+                    _dbContext.Entry(existingQuestionnaire).CurrentValues.SetValues(questionnaire);
+
+                }
+                await _dbContext.SaveChangesAsync();
+                return Ok(new { Message = "Questionnaire updated successfully" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new {Message = ex.Message});
+            }
         }
 
         private Enquiry MapToEntity(EnquiryDto dto)
