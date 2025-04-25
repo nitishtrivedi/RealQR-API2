@@ -11,12 +11,18 @@ namespace RealQR_API.Repositories
 
         public async Task<IEnumerable<User>> GetAllAsync()
         {
-            return await _dbContext.Users.ToListAsync();
+            return await _dbContext.Users
+                .Include(u => u.Enquiries)
+                .ThenInclude(e => e.EnquiryQuestionnaire)
+                .ToListAsync();
         }
 
         public async Task<User> GetByIdAsync(int id)
         {
-            var user = await _dbContext.Users.FindAsync(id);
+            var user = await _dbContext.Users
+                .Include(u => u.Enquiries)
+                .ThenInclude(e => e.EnquiryQuestionnaire)
+                .FirstOrDefaultAsync(u => u.Id == id);
             return user ?? throw new Exception("User Not Found");
         }
 
