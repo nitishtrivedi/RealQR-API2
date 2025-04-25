@@ -29,15 +29,16 @@ namespace RealQR_API.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var newUser = await _userService.AddUser(user);
-            return CreatedAtAction(nameof(AddUser), new {id = user.Id}, user);
+            return CreatedAtAction(nameof(GetUserById), new {id = user.Id}, newUser);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> EditUser([FromBody] User user, int id)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != user.Id) return BadRequest(new { Message = "User ID mismatch" });
             var success = await _userService.EditUser(user, id);
-            if (!success) return BadRequest(new {Message = $"User with ID: {id} not found."});
+            if (!success) return NotFound(new {Message = $"User with ID: {id} not found."});
             return Ok(new {Message = $"User with ID: {id} modified successfully."});
         }
 
@@ -46,7 +47,7 @@ namespace RealQR_API.Controllers
         {
             var success = await _userService.DeleteUser(id);
             if (!success) return BadRequest(new {Message = $"user with ID: {id} not found."});
-            return Ok(new { Message = "User Deleted successfully" });
+            return Ok(new { Message = "User Deleted successfully, assigned enquiries set to unassigned" });
         }
     }
 }

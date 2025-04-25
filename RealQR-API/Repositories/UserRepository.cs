@@ -39,11 +39,30 @@ namespace RealQR_API.Repositories
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var user = await GetByIdAsync(id);
+            //var user = await GetByIdAsync(id);
+            //if (user == null) return false;
+            //_dbContext.Users.Remove(user);
+            //await _dbContext.SaveChangesAsync();
+            //return true;
+
+            var user = await _dbContext.Users
+                .Include(u => u.Enquiries)
+                .ThenInclude(e => e.EnquiryQuestionnaire)
+                .FirstOrDefaultAsync(u => u.Id == id);
             if (user == null) return false;
+            foreach (var enquiry in user.Enquiries)
+            {
+                enquiry.UserId = null;
+                enquiry.User = null;
+                if (enquiry.EnquiryQuestionnaire != null)
+                {
+                    enquiry.EnquiryQuestionnaire.AgentName = ""; // Clear AgentName
+                }
+            }
+
             _dbContext.Users.Remove(user);
-            await _dbContext.SaveChangesAsync();
-            return true;
+            var result = await _dbContext.SaveChangesAsync() > 0;
+            return result;
         }
     }
 }

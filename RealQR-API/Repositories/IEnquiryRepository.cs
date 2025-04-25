@@ -10,5 +10,6 @@ namespace RealQR_API.Repositories
         Task<EnquiryDto> AddAsync(Enquiry enquiry);
         Task<bool> EditAsync(int id, Enquiry enquiry);
         Task<bool> DeleteAsync(int id);
+        Task<User> GetRandomNonAdminUserAsync();
     }
 }

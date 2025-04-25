@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using RealQR_API.DBContext;
 using RealQR_API.DTOs;
 using RealQR_API.Models;
+using RealQR_API.Repositories;
 using RealQR_API.Services;
+using System.Security.Claims;
 
 namespace RealQR_API.Controllers
 {
@@ -15,10 +17,12 @@ namespace RealQR_API.Controllers
     {
         private readonly IEnquiryService _enquiryService;
         private readonly RealQRDBContext _dbContext;
-        public EnquiryController(IEnquiryService enquiryService, RealQRDBContext dbContext)
+        private readonly IEnquiryRepository _enquiryRepository;
+        public EnquiryController(IEnquiryService enquiryService, RealQRDBContext dbContext, IEnquiryRepository enquiryRepository)
         {
             _enquiryService = enquiryService;
             _dbContext = dbContext;
+            _enquiryRepository = enquiryRepository;
         }
 
         [HttpGet]
@@ -45,11 +49,64 @@ namespace RealQR_API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> EditEnquiry(int id, [FromBody] EnquiryDto enquiryDto)
         {
+            //if (!ModelState.IsValid) return BadRequest(ModelState);
+            //var enquiry = MapToEntity(enquiryDto);
+            //var success = await _enquiryService.EditEnquiryAsync(id, enquiry);
+            //if (!success) return NotFound(new { Message = $"Enquiry with ID: {id} not found" });
+            //return Ok(new {Message = $"Enquiry with ID: {id} edited successfully"});
+
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != enquiryDto.Id) return BadRequest(new { Message = $"Enquiry ID Mismatch" });
+
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.Name)?.Value ?? "0");
+            var currentUser = await _dbContext.Users.FindAsync(currentUserId);
+
+            if (currentUser == null) return Unauthorized(new { Message = "Current user not found" });
+
             var enquiry = MapToEntity(enquiryDto);
+
+            if (currentUser.IsUserAdmin)
+            {
+                if (enquiryDto.UserId == null || enquiryDto.UserId == 0)
+                {
+                    // Admin chooses not to assign; set to unassigned or assign randomly
+                    var existingEnquiry = await _dbContext.Enquiry.FindAsync(id);
+                    if (existingEnquiry != null && existingEnquiry.UserId == null)
+                    {
+                        var nonAdminUser = await _enquiryRepository.GetRandomNonAdminUserAsync();
+                        if (nonAdminUser != null)
+                        {
+                            enquiry.UserId = nonAdminUser.Id;
+                            enquiry.User = nonAdminUser;
+                        }
+                    }
+                }
+                else
+                {
+                    // Admin specifies a user ID
+                    var assignedUser = await _dbContext.Users.FindAsync(enquiryDto.UserId);
+                    if (assignedUser == null) return BadRequest(new { Message = $"User with ID: {enquiryDto.UserId} not found" });
+                    enquiry.UserId = assignedUser.Id;
+                    enquiry.User = assignedUser;
+                }
+            }
+            else
+            {
+                // Non-admin users can only edit enquiries assigned to them or unassigned
+                var existingEnquiry = await _dbContext.Enquiry.FindAsync(id);
+                if (existingEnquiry == null || (existingEnquiry.UserId != currentUserId && existingEnquiry.UserId != null))
+                {
+                    return Unauthorized(new { Message = "You are not authorized to edit this enquiry" });
+                }
+                enquiry.UserId = currentUserId;
+                enquiry.User = currentUser;
+            }
+
             var success = await _enquiryService.EditEnquiryAsync(id, enquiry);
             if (!success) return NotFound(new { Message = $"Enquiry with ID: {id} not found" });
-            return Ok(new {Message = $"Enquiry with ID: {id} edited successfully"});
+            return Ok(new { Message = $"Enquiry with ID: {id} edited successfully" });
+
+
         }
 
         [HttpDelete("{id}")]
@@ -112,6 +169,7 @@ namespace RealQR_API.Controllers
                 PurchaseType = dto.PurchaseType,
                 OtherQuestions = dto.OtherQuestions,
                 ConsentToCall = dto.ConsentToCall,
+                UserId = dto.UserId,
                 EnquiryQuestionnaire = dto.EnquiryQuestionnaire != null ? new EnquiryQuestionnaire
                 {
                     Id = dto.EnquiryQuestionnaire.Id,

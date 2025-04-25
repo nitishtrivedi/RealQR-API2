@@ -26,5 +26,8 @@ namespace RealQR_API.Models
 
         public EnquiryQuestionnaire EnquiryQuestionnaire { get; set; }
 
+        //For User allotment
+        public int? UserId { get; set; }
+        public User User { get; set; }
     }
 }

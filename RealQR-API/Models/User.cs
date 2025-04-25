@@ -12,5 +12,6 @@ namespace RealQR_API.Models
         public string PasswordHash { get; set; }
         public string Email { get; set; }
         public bool IsUserAdmin { get; set; }
+        public ICollection<Enquiry> Enquiries { get; set; }
     }
 }

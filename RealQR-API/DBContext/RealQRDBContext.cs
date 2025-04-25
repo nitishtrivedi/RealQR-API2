@@ -23,6 +23,12 @@ namespace RealQR_API.DBContext
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Enquiry>()
+                .HasOne(e => e.User)
+                .WithMany(u => u.Enquiries)
+                .HasForeignKey(e => e.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
             //Ensures 1-1 relation between Enquiry and enquiryQuestionnaire
             modelBuilder.Entity<Enquiry>()
                 .HasOne(e => e.EnquiryQuestionnaire)
