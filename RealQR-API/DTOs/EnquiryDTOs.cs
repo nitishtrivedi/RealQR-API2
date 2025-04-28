@@ -16,6 +16,8 @@
         public string PurchaseType { get; set; }
         public string OtherQuestions { get; set; }
         public bool ConsentToCall { get; set; }
+        public int? UserId { get; set; } // Added to support user assignment
+        public UserDto User { get; set; }
         public EnquiryQuestionnaireDto EnquiryQuestionnaire { get; set; }
     }
 
@@ -32,5 +34,15 @@
         public string LoanProcessingVendor { get; set; }
         public string FollowUpActions { get; set; }
         public string Comments { get; set; }
+    }
+
+    public class UserDto
+    {
+        public int Id { get; set; }
+        public string UserName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public bool IsUserAdmin { get; set; }
     }
 }

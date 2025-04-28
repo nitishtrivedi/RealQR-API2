@@ -13,13 +13,16 @@ namespace RealQR_API.Repositories
 
         public async Task<IEnumerable<EnquiryDto>> GetAllAsync()
         {
-            var enquiries = await _dbContext.Enquiry.Include(e => e.EnquiryQuestionnaire).ToListAsync();
+            var enquiries = await _dbContext.Enquiry.Include(e => e.EnquiryQuestionnaire).Include(e => e.User).ToListAsync();
             return enquiries.Select(e => MapToDto(e)).ToList();
         }
 
         public async Task<EnquiryDto> GetAsync(int id)
         {
-            var enquiry = await _dbContext.Enquiry.Include(e => e.EnquiryQuestionnaire).FirstOrDefaultAsync(e => e.Id == id);
+            var enquiry = await _dbContext.Enquiry
+                .Include(e => e.EnquiryQuestionnaire)
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.Id == id);
             if (enquiry == null) throw new KeyNotFoundException($"Enquiry with ID: {id} not found");
             return MapToDto(enquiry);
         }
@@ -47,21 +50,28 @@ namespace RealQR_API.Repositories
             if (id != enquiry.Id) return false;
             var existingEnquiry = await _dbContext.Enquiry.FindAsync(id);
             if (existingEnquiry == null) return false;
-            _dbContext.Entry(existingEnquiry).CurrentValues.SetValues(enquiry);
 
-            if (existingEnquiry.EnquiryQuestionnaire == null)
+            _dbContext.Entry(existingEnquiry).CurrentValues.SetValues(enquiry);
+            _dbContext.Entry(existingEnquiry).State = EntityState.Modified;
+
+            var existingQuestionnaire = await _dbContext.EnquiryQuestionnaire
+                        .FirstOrDefaultAsync(q => q.EnquiryId == id);
+
+            if (existingQuestionnaire == null)
             {
-                existingEnquiry.EnquiryQuestionnaire = new EnquiryQuestionnaire
+                var newQuestionnaire = new EnquiryQuestionnaire
                 {
                     EnquiryId = enquiry.Id,
                     EnquiryStatus = "Open",
-                    AgentName = ""
+                    AgentName = enquiry.User != null ? $"{enquiry.User.FirstName} {enquiry.User.LastName}" : ""
                 };
-                _dbContext.EnquiryQuestionnaire.Add(existingEnquiry.EnquiryQuestionnaire);
+                _dbContext.EnquiryQuestionnaire.Add(newQuestionnaire);
             }
             else if(enquiry.EnquiryQuestionnaire != null)
             {
-                _dbContext.Entry(existingEnquiry.EnquiryQuestionnaire).CurrentValues.SetValues(enquiry.EnquiryQuestionnaire);
+                _dbContext.Entry(existingQuestionnaire).CurrentValues.SetValues(enquiry.EnquiryQuestionnaire);
+                existingQuestionnaire.AgentName = enquiry.User != null ? $"{enquiry.User.FirstName} {enquiry.User.LastName}" : "";
+                _dbContext.Entry(existingQuestionnaire).State = EntityState.Modified;
             }
 
             var result = await _dbContext.SaveChangesAsync() > 0;
@@ -82,6 +92,16 @@ namespace RealQR_API.Repositories
             return result;
         }
 
+        public async Task<User> GetRandomNonAdminUserAsync()
+        {
+            var nonAdminUsers = await _dbContext.Users
+                .Where(u => !u.IsUserAdmin)
+                .ToListAsync();
+            if (!nonAdminUsers.Any()) return null;
+            var random = new Random();
+            return nonAdminUsers[random.Next(nonAdminUsers.Count)];
+        }
+
         private EnquiryDto MapToDto(Enquiry enquiry)
         {
             return new EnquiryDto
@@ -100,6 +120,16 @@ namespace RealQR_API.Repositories
                 PurchaseType = enquiry.PurchaseType,
                 OtherQuestions = enquiry.OtherQuestions,
                 ConsentToCall = enquiry.ConsentToCall,
+                UserId = enquiry.UserId,
+                User = enquiry.User != null ? new UserDto
+                {
+                    Id = enquiry.User.Id,
+                    UserName = enquiry.User.UserName,
+                    FirstName = enquiry.User.FirstName,
+                    LastName = enquiry.User.LastName,
+                    Email = enquiry.User.Email,
+                    IsUserAdmin = enquiry.User.IsUserAdmin
+                } : null,
                 EnquiryQuestionnaire = enquiry.EnquiryQuestionnaire != null ? new EnquiryQuestionnaireDto
                 {
                     Id = enquiry.EnquiryQuestionnaire.Id,

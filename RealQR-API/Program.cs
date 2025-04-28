@@ -17,7 +17,7 @@ builder.Services.AddControllers();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = null; 
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; 
         options.JsonSerializerOptions.MaxDepth = 64; 
         options.JsonSerializerOptions.WriteIndented = true;
     });

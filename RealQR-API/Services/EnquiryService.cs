@@ -15,7 +15,15 @@ namespace RealQR_API.Services
         
         public async Task<EnquiryDto> GetEnquiryAsync(int id) => await _enquiryRepository.GetAsync(id);
 
-        public async Task<EnquiryDto> AddEnquiryAsync(Enquiry enquiry) => await _enquiryRepository.AddAsync(enquiry);
+        public async Task<EnquiryDto> AddEnquiryAsync(Enquiry enquiry)
+        {
+            var nonAdminUser = await _enquiryRepository.GetRandomNonAdminUserAsync();
+            if (nonAdminUser != null)
+            {
+                enquiry.UserId = nonAdminUser.Id;
+            }
+            return await _enquiryRepository.AddAsync(enquiry);
+        }
 
         public async Task<bool> EditEnquiryAsync(int id, Enquiry enquiry) => await _enquiryRepository.EditAsync(id, enquiry);
 
