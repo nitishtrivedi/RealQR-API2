@@ -50,22 +50,28 @@ namespace RealQR_API.Repositories
             if (id != enquiry.Id) return false;
             var existingEnquiry = await _dbContext.Enquiry.FindAsync(id);
             if (existingEnquiry == null) return false;
-            _dbContext.Entry(existingEnquiry).CurrentValues.SetValues(enquiry);
 
-            if (existingEnquiry.EnquiryQuestionnaire == null)
+            _dbContext.Entry(existingEnquiry).CurrentValues.SetValues(enquiry);
+            _dbContext.Entry(existingEnquiry).State = EntityState.Modified;
+
+            var existingQuestionnaire = await _dbContext.EnquiryQuestionnaire
+                        .FirstOrDefaultAsync(q => q.EnquiryId == id);
+
+            if (existingQuestionnaire == null)
             {
-                existingEnquiry.EnquiryQuestionnaire = new EnquiryQuestionnaire
+                var newQuestionnaire = new EnquiryQuestionnaire
                 {
                     EnquiryId = enquiry.Id,
                     EnquiryStatus = "Open",
                     AgentName = enquiry.User != null ? $"{enquiry.User.FirstName} {enquiry.User.LastName}" : ""
                 };
-                _dbContext.EnquiryQuestionnaire.Add(existingEnquiry.EnquiryQuestionnaire);
+                _dbContext.EnquiryQuestionnaire.Add(newQuestionnaire);
             }
             else if(enquiry.EnquiryQuestionnaire != null)
             {
-                _dbContext.Entry(existingEnquiry.EnquiryQuestionnaire).CurrentValues.SetValues(enquiry.EnquiryQuestionnaire);
-                existingEnquiry.EnquiryQuestionnaire.AgentName = enquiry.User != null ? $"{enquiry.User.FirstName} {enquiry.User.LastName}" : "";
+                _dbContext.Entry(existingQuestionnaire).CurrentValues.SetValues(enquiry.EnquiryQuestionnaire);
+                existingQuestionnaire.AgentName = enquiry.User != null ? $"{enquiry.User.FirstName} {enquiry.User.LastName}" : "";
+                _dbContext.Entry(existingQuestionnaire).State = EntityState.Modified;
             }
 
             var result = await _dbContext.SaveChangesAsync() > 0;
